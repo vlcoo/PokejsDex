@@ -1,12 +1,11 @@
 class VPokeInfo {
-    constructor(mon, species) {
+    constructor(mon, species, presetGridXPos) {
         this.mon = mon;
         this.species = species;
-        this.bgGrid = loadImage("assets/graphics/bg_grid.png");
-        this.bgGridXPos = 0;
-        this.bgTextbox = loadImage("assets/graphics/bg_textbox.png");
-        this.toolbarTitle = loadImage("assets/graphics/toolbar_info.png");
-        this.toolbarBNavi = loadImage("assets/graphics/toolbar_bg_bottomNavi.png");
+        this.bgGrid = images["bg_grid_info"];
+        this.bgTextbox = images["bg_textbox"];
+        this.toolbarTitle = images["toolbar_info"];
+        this.toolbarBNavi = images["toolbar_bg_bottomNavi"];
         
         this.sprites = {};
         for (var sprite in this.mon.sprites) {
@@ -16,9 +15,9 @@ class VPokeInfo {
     }
 
     onDraw() {
-        this.bgGridXPos -= 0.5;
-        if (this.bgGridXPos < -64) this.bgGridXPos = 0;
-        image(this.bgGrid, this.bgGridXPos, 0);
+        bgGridXPos -= 0.5;
+        if (bgGridXPos < -64) bgGridXPos = 0;
+        image(this.bgGrid, bgGridXPos, 0);
         image(this.toolbarTitle, 0, 0);
         image(this.toolbarBNavi, 0, 720);
         image(this.bgTextbox, 0, 384);
@@ -28,7 +27,7 @@ class VPokeInfo {
         
         shText(String(this.mon.id).padStart(3, '0'), 272, 410, colors["blFg"], colors["blSh"]);
         shText(capitalize(this.mon.name), 350, 410, colors["blFg"], colors["blSh"]);
-        shText(this.species.flavor_text_entries[this.getDexTextLang("en")].flavor_text,
+        shText(this.species.flavor_text_entries[this.getDexTextLangGen("en", "black-2")].flavor_text,
             25, 618, colors["whFg"], colors["whSh"], 400, 100);
         shText(this.species.genera[7].genus, 284, 444, colors["blFg"], colors["blSh"]);
         shText("HT", 288, 536, colors["blFg"], colors["blSh"]);
@@ -40,12 +39,29 @@ class VPokeInfo {
         textAlign(LEFT);
     }
 
-    getDexTextLang(lang) {
+    onMouseInput(x, y, button) {
+
+    }
+
+    onKeyInput(k) {
+        if (k == ESCAPE) {
+            loadMainMenu(this.mon.id);
+        }
+        else if (k == DOWN_ARROW) loadPokeInfoView(this.mon.id + 1, this.bgGridXPos);
+        else if (k == UP_ARROW) loadPokeInfoView(this.mon.id - 1, this.bgGridXPos);
+    }
+
+    onScrollInput(d) {
+
+    }
+
+    getDexTextLangGen(lang, genName) {
         for (var i in this.species.flavor_text_entries) {
-            if (this.species.flavor_text_entries[i].language.name === lang) {
+            if (this.species.flavor_text_entries[i].language.name === lang &&
+                this.species.flavor_text_entries[i].version.name === genName) {
                 return i;
             }
         }
-        return -1;
+        return 0;
     }
 }
