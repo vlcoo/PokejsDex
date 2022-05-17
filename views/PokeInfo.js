@@ -1,5 +1,5 @@
 class VPokeInfo {
-    constructor(mon, species, presetGridXPos) {
+    constructor(mon, species) {
         this.mon = mon;
         this.species = species;
         this.bgGrid = images["bg_grid_info"];
@@ -22,7 +22,9 @@ class VPokeInfo {
         image(this.toolbarBNavi, 0, 720);
         image(this.bgTextbox, 0, 384);
         scale(-2, 2);
-        image(this.sprites.front_default, -98, 192);
+        let img = cachedSprites[this.mon.id];
+        if (img == undefined) loadNextBatchSprites();
+        else image(img[1], -98, 192);
         scale(-0.5, 0.5);
         
         shText(String(this.mon.id).padStart(3, '0'), 272, 410, colors["blFg"], colors["blSh"]);
@@ -40,12 +42,16 @@ class VPokeInfo {
     }
 
     onMouseInput(x, y, button) {
+        loadMainMenu(this.mon.id + 1);
+    }
 
+    onMouseHold(x, y, button) {
+        
     }
 
     onKeyInput(k) {
         if (k == ESCAPE) {
-            loadMainMenu(this.mon.id);
+            loadMainMenu(this.mon.id + 1);
         }
         else if (k == DOWN_ARROW) loadPokeInfoView(this.mon.id + 1, this.bgGridXPos);
         else if (k == UP_ARROW) loadPokeInfoView(this.mon.id - 1, this.bgGridXPos);

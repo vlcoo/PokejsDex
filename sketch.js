@@ -1,18 +1,37 @@
-const P = new Pokedex.Pokedex();
+const P = new Pokedex.Pokedex({cacheImages: true});
+const batchSize = 16;
+const nSongs = 0;
+const getMonIcon = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons/${id}.png`;
+const getMonFSprite = (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+
 let bgColor;
 let currView;
 let fonts;
 let colors;
 let images = {};
+let cachedSprites = {};     // {monId → [icon, frontSprite]}
+let spinImg;
 let bgGridXPos = 0;
+let atestingSong;
+let loadingResources = false;
+
+function preload() {
+    setupImages();
+    loadNextBatchSprites();
+    if (nSongs > 0) {
+        let randSong = Math.floor(Math.random() * nSongs);
+        atestingSong = loadSound(`assets/bgSongs/${randSong}.ogg`);
+        atestingSong.setVolume(0.01);
+    }
+}
 
 function setup() {
+    if (atestingSong) atestingSong.loop();
     createCanvas(512, 768);
     noSmooth();
 
     setupFonts();
     setupColors();
-    setupImages();
 
     bgColor = color(186, 32, 16);
     loadMainMenu();
@@ -44,13 +63,35 @@ function setupImages() {
     images["toolbar_natdex"] = loadImage("assets/graphics/toolbar_natdex.png");
     images["button_listEntry_up"] = loadImage("assets/graphics/button_listEntry_up.png"),
     images["button_listEntry_down"] = loadImage("assets/graphics/button_listEntry_down.png")
+    spinImg = loadImage("assets/graphics/spin.gif");
+}
+
+function loadNextBatchSprites() {
+    loadingResources = true;
+
+    let len = Object.keys(cachedSprites).length + 1;
+    let i = len;
+    while (i < batchSize + len) {
+        let mon = cachedSprites[i];
+        if (mon == undefined) {
+            cachedSprites[i] = [
+                loadImage(getMonIcon(i)), 
+                loadImage(getMonFSprite(i), function() {
+                    loadingResources = false;
+                })
+            ];
+            i++;
+        }
+    }
 }
 
 function draw() {
     background(bgColor);
     if (currView != null) {
         currView.onDraw(); 
+        if (mouseIsPressed) currView.onMouseHold(mouseX, mouseY, mouseButton);
     }
+    if (loadingResources) image(spinImg, 12, 728);
 }
 
 function keyPressed() {
@@ -66,16 +107,22 @@ function mouseWheel(event) {
 }
 
 function loadMainMenu(presetScroll) {
+    loadingResources = true;
+
     P.getPokedexByName("national").then(function(response) {
         currView = new VPokeList(response, presetScroll);
+        loadingResources = false;
     }).catch(function(err) {
         currView = new VError(err.message);
     })
 }
 
 function loadPokeInfoView(which) {
+    loadingResources = true;
+
     Promise.all([P.getPokemonByName(which), P.getPokemonSpeciesByName(which)]).then(function(results) {
-        currView = new VPokeInfo(results[0], results[1])
+        currView = new VPokeInfo(results[0], results[1]);
+        loadingResources = false;
     }).catch(function(err) {
         currView = new VError(err.message);
     });
@@ -85,6 +132,7 @@ function shText(msg, x, y, colorFg, colorSh, x2=300, y2=700) {
     msg = msg.toString().replace(/(\r\n|\n|\r)/gm, " ");
 
     push();
+    noStroke();
     textLeading(30);
     fill(colorSh);
     text(msg, x+2, y+2, x2, y2);
