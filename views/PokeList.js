@@ -7,23 +7,40 @@ class VPokeList {
         this.toolbarTitle = images["toolbar_natdex"];
         this.toolbarBNavi = images["toolbar_bg_bottomNavi"];
 
+        this.toolbarTitleYPos = -98;
+        this.toolbarBNaviYPos = 768;
+        this.fgMaskAlpha = 255;
+        this.fgMaskColor = color(0, 0, 0, alpha=this.fgMaskAlpha);
+
         this.list = new BList(192, 338);
         for (var p of this.dex.pokemon_entries) {
             this.list.addEntry(new ListEntry(p.entry_number, p.pokemon_species.name, undefined));
+            if (p.entry_number == 807) break;
         }
         for (var i = presetScroll-2; i > 0; i--) this.list.scroll(1);
+
+        transAnimTimer = 4;
+    }
+
+    onAppearAnimStep() {
+        this.toolbarTitleYPos += 24.5;
+        this.toolbarBNaviYPos -= 12;
+        this.fgMaskColor.setAlpha(this.fgMaskAlpha -= 63.75);
+    }
+
+    onDisappearAnimStep() {
+        this.toolbarTitleYPos -= 24.5;
+        this.toolbarBNaviYPos += 12;
+        this.fgMaskColor.setAlpha(this.fgMaskAlpha += 63.75);
     }
 
     onDraw() {
         bgGridXPos -= 0.5;
         if (bgGridXPos < -128) bgGridXPos = 0;
         image(this.bgGrid, bgGridXPos, 0);
-        image(this.toolbarTitle, 0, 0);
-        image(this.toolbarBNavi, 0, 720);
         image(this.bgOverlay, 11, 378);
         this.list.onDraw();
-        shText("Proof of concept. Unfinished program!", 24, 60, colors["blFg"], colors["blSh"], 512);
-
+        
         stroke(40, 40, 40);
         strokeWeight(2);
         fill(186, 186, 186);
@@ -31,12 +48,21 @@ class VPokeList {
         fill(251, 203, 56)
         this.scrollbarYPos = map(this.list.selectedMon, 1, this.list.entries.length, 402, 701);
         rect(500, this.scrollbarYPos, 8, 15)
+        
+        background(this.fgMaskColor);
+        
+        image(this.toolbarTitle, 0, this.toolbarTitleYPos);
+        image(this.toolbarBNavi, 0, this.toolbarBNaviYPos);
+        shText("Proof of concept. Unfinished program!", 24, this.toolbarTitleYPos+60, colors["blFg"], colors["blSh"], 512);
     }
 
     onMouseInput(x, y, button) {
         if (button == LEFT) {
             let p = this.list.whichPressed(x, y);
-            if (p != -1) this.openEntry(p.id);
+            if (p != -1) {
+                this.list.selectedMon = p.id;
+                this.openEntry(p.id);
+            }
         }
     }
 
@@ -58,11 +84,12 @@ class VPokeList {
     }
 
     openEntry(mon) {
+        transAnimTimer = -8;
         loadPokeInfoView(mon);
     }
 
     isPressingScrollbar(x, y) {
-        return x >= 500 && x <= 508 && y >= 402 && y <= 701;
+        return x >= 492 && x <= 516 && y >= 402 && y <= 701;
     }
 }
 
@@ -76,8 +103,8 @@ class ListEntry {
         this.y = 0;
     }
 
-    onDraw() {
-        image(this.bgs[this.pressed ? 1 : 0], this.x, this.y);
+    onDraw(isSelected=false) {
+        image(this.bgs[isSelected ? 1 : 0], this.x, this.y);
         let icon = cachedSprites[this.id];
         if (icon != undefined) {
             push();
@@ -113,7 +140,7 @@ class BList {
     onDraw() {
         if (this.entries.length == 0) return;
         for (var entry of this.entries) {
-            if (this.isVisible(entry)) entry.onDraw();
+            if (this.isVisible(entry)) entry.onDraw(entry.id == this.selectedMon);
         }
 
         let icon = cachedSprites[this.selectedMon];
@@ -149,8 +176,11 @@ class BList {
         }
         this.selectedMon += dir;
         
-        if (this.selectedMon + 8 >= Object.keys(cachedSprites).length) {
-            loadNextBatchSprites();
+        if (this.selectedMon - 8 > 0 && cachedSprites[this.entries[this.selectedMon - 8].id] == undefined) {
+            pleaseLoadBatch = this.selectedMon - 8;
+        }
+        else if (this.selectedMon + 8 < this.entries.length && cachedSprites[this.entries[this.selectedMon + 8].id] == undefined) {
+            pleaseLoadBatch = this.selectedMon + 6;
         }
 
         if (again > 0) this.scroll(dir, again-1);

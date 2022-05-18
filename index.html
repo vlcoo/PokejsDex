@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Sketch</title>
+    <title>PokéjsDex</title>
 
     <link rel="stylesheet" type="text/css" href="style.css">
 
@@ -13,10 +14,29 @@
     <script src="libraries/p5.sound.min.js"></script>
     <script src="views/PokeInfo.js"></script>
     <script src="views/PokeList.js"></script>
+    <script src="views/PokeForm.js"></script>
     <script src="views/Error.js"></script>
-  </head>
 
-  <body>
-    <script src="sketch.js"></script>
-  </body>
+    <script type="text/javascript">
+        function canvasZoom(scale) {
+            let w1 = 256;
+            let h1 = 384;
+            document.getElementById("defaultCanvas0").style.height = (h1 * scale) + "px";
+            document.getElementById("defaultCanvas0").style.width = (w1 * scale) + "px";
+        }
+    </script>
+</head>
+
+<body>
+    <div id="buttonToolbar">
+        <p style="display: inline;">Zoom:</p>
+        <button onclick="canvasZoom(1)">1x</button>
+        <button onclick="canvasZoom(1.5)">1.5x</button>
+        <button onclick="canvasZoom(2)">2x</button>
+    </div>
+    <div>
+        <script src="sketch.js"></script>
+    </div>
+</body>
+
 </html>
